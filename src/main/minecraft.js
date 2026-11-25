@@ -736,7 +736,8 @@ async function listVersions(root, { force = false } = {}) {
       type,
       releaseTime,
       url,
-      installed: installed.has(id)
+      installed: installed.has(id),
+      experimental: Boolean(manifest.latest?.snapshot === id && type === 'snapshot' && /experimental/i.test(id))
     }))
   };
 }
