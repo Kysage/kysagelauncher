@@ -23,7 +23,8 @@
       "!shots/**/*",
       "!test/**/*",
       "!dist/**/*",
-      "!dist-installer/**/*"
+      "!dist-installer/**/*",
+      "!dist-test/**/*"
     ],
     "icon": "assets/icon.ico",
     "win": {
@@ -62,7 +63,8 @@
     "test": "node --test",
     "build:win": "electron-packager . \"OBSIDIAN Launcher\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --asar=true --icon=assets/icon.ico",
     "build:installer": "electron-builder --win nsis",
-    "publish:release": "electron-builder --win nsis --publish always"
+    "publish:release": "electron-builder --win nsis --publish always",
+    "build:test": "electron-builder --win nsis --config.directories.output=dist-test"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",

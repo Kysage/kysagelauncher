@@ -233,16 +233,18 @@
     return instances.map((instance) => {
       const active = instance.id === state.activeInstance?.id;
       const loaderName = LOADER_NAMES[instance.loader] || instance.loader;
+      const loaderClass = `loader-${String(instance.loader || 'vanilla').toLowerCase()}`;
       return `<article class="instance-card${active ? ' is-active' : ''}${compact ? ' is-compact' : ''}">
-        <span class="instance-icon">${art.cube(compact ? 30 : 38)}</span>
-        <div class="instance-info">
-          <strong>${esc(instance.name)}</strong>
-          <span>Minecraft ${esc(instance.versionId)} · ${esc(loaderName)}${instance.loaderVersion ? ` ${esc(instance.loaderVersion)}` : ''}</span>
-          ${compact ? '' : `<small>${esc(instance.gameDir || '')}</small>`}
+        <div class="instance-card-main">
+          <span class="instance-icon ${loaderClass}">${art.cube(compact ? 30 : 38)}</span>
+          <div class="instance-info">
+            <div class="instance-title-line"><strong>${esc(instance.name)}</strong>${active ? '<span class="instance-active-badge">АКТИВНАЯ</span>' : ''}</div>
+            <span>Minecraft ${esc(instance.versionId)} <i></i> ${esc(loaderName)}${instance.loaderVersion ? ` ${esc(instance.loaderVersion)}` : ''}</span>
+            ${compact ? '' : `<small>${esc(instance.gameDir || '')}</small>`}
+          </div>
+          <button class="btn ${active ? 'btn--play' : 'btn--soft'} btn--sm instance-select" data-select-instance="${esc(instance.id)}">${active ? 'Выбрана' : 'Играть в сборку'}</button>
         </div>
-        ${compact ? '' : `<button class="btn btn--soft btn--sm" data-configure-instance="${esc(instance.id)}">Настроить</button>`}
-        ${compact ? '' : `<button class="btn btn--danger btn--sm" data-delete-instance="${esc(instance.id)}">Удалить</button>`}
-        <button class="btn ${active ? 'btn--play' : 'btn--soft'} btn--sm" data-select-instance="${esc(instance.id)}">${active ? 'Выбрана' : 'Выбрать'}</button>
+        ${compact ? '' : `<div class="instance-card-actions"><span>${active ? 'Сейчас выбрана для запуска' : 'Профиль готов к запуску'}</span><div><button class="btn btn--soft btn--sm" data-configure-instance="${esc(instance.id)}">Настроить</button><button class="btn btn--danger btn--sm" data-delete-instance="${esc(instance.id)}">Удалить</button></div></div>`}
       </article>`;
     }).join('');
   }
