@@ -18,6 +18,18 @@
     view: 'home',
     loadingVersions: true,
     versionError: '',
+    versionQuery: '',
+    versionFilter: {
+      remote: true,
+      modifications: true,
+      alpha: false,
+      experimental: false,
+      installedOnly: false,
+      snapshot: false,
+      beta: false,
+      launcher: false,
+      legacy: true
+    },
     busy: false,
     running: false,
     progressPercent: 0,
@@ -33,6 +45,7 @@
     modDownloadOverallPercent: 0,
     modSearchRequestId: 0,
     modIndex: 0,
+    curseforgeContext: 'mods',
     curseforgeConfigured: false,
     manualDownloads: [],
     manualStatus: {},
@@ -137,6 +150,7 @@
       if (state.bridge.onUpdateEvent) state.bridge.onUpdateEvent(handleUpdateEvent);
       $('#updateLater').addEventListener('click', () => { $('#updateModal').hidden = true; });
       $('#updateAction').addEventListener('click', handleUpdateAction);
+      $('#checkUpdates').addEventListener('click', checkForNotifications);
       if (state.bridge.onLaunch) {
         state.bridge.onLaunch(handleLaunchEvent);
       }
@@ -233,16 +247,18 @@
     return instances.map((instance) => {
       const active = instance.id === state.activeInstance?.id;
       const loaderName = LOADER_NAMES[instance.loader] || instance.loader;
+      const loaderClass = `loader-${String(instance.loader || 'vanilla').toLowerCase()}`;
       return `<article class="instance-card${active ? ' is-active' : ''}${compact ? ' is-compact' : ''}">
-        <span class="instance-icon">${art.cube(compact ? 30 : 38)}</span>
-        <div class="instance-info">
-          <strong>${esc(instance.name)}</strong>
-          <span>Minecraft ${esc(instance.versionId)} · ${esc(loaderName)}${instance.loaderVersion ? ` ${esc(instance.loaderVersion)}` : ''}</span>
-          ${compact ? '' : `<small>${esc(instance.gameDir || '')}</small>`}
+        <div class="instance-card-main">
+          <span class="instance-icon ${loaderClass}">${art.cube(compact ? 30 : 38)}</span>
+          <div class="instance-info">
+            <div class="instance-title-line"><strong>${esc(instance.name)}</strong>${active ? '<span class="instance-active-badge">АКТИВНАЯ</span>' : ''}</div>
+            <span>Minecraft ${esc(instance.versionId)} <i></i> ${esc(loaderName)}${instance.loaderVersion ? ` ${esc(instance.loaderVersion)}` : ''}</span>
+            ${compact ? '' : `<small>${esc(instance.gameDir || '')}</small>`}
+          </div>
+          <button class="btn ${active ? 'btn--play' : 'btn--soft'} btn--sm instance-select" data-select-instance="${esc(instance.id)}">${active ? 'Выбрана' : 'Выбрать'}</button>
         </div>
-        ${compact ? '' : `<button class="btn btn--soft btn--sm" data-configure-instance="${esc(instance.id)}">Настроить</button>`}
-        ${compact ? '' : `<button class="btn btn--danger btn--sm" data-delete-instance="${esc(instance.id)}">Удалить</button>`}
-        <button class="btn ${active ? 'btn--play' : 'btn--soft'} btn--sm" data-select-instance="${esc(instance.id)}">${active ? 'Выбрана' : 'Выбрать'}</button>
+        ${compact ? '' : `<div class="instance-card-actions"><span>${active ? 'Сейчас выбрана для запуска' : 'Профиль готов к запуску'}</span><div><button class="btn btn--soft btn--sm" data-configure-instance="${esc(instance.id)}">Настроить</button><button class="btn btn--danger btn--sm" data-delete-instance="${esc(instance.id)}">Удалить</button></div></div>`}
       </article>`;
     }).join('');
   }
@@ -265,13 +281,37 @@
   function updateInstanceVersionOptions() {
     const select = $('#instanceGameVersion');
     if (!select) return;
-    const selectedVersion = state.activeInstance?.versionId || state.versions.find((item) => item.type === 'release')?.id;
-    select.innerHTML = state.versions.length
-      ? state.versions.map((version) =>
+    const selectedVersion = select.value || state.activeInstance?.versionId || state.versions.find((item) => item.type === 'release')?.id;
+    const query = state.versionQuery.trim().toLowerCase();
+    const filters = state.versionFilter;
+    const filtered = state.versions.filter((version) => {
+      const id = String(version.id || '');
+      const type = String(version.type || '').toLowerCase();
+      const installed = Boolean(version.installed || version.local || version.isInstalled);
+      const legacy = /^1\\.(?:[0-5]\\.|6\\.(?:[0-4])(?:\\.|$)|7\\.(?:0|1)(?:\\.|$))/.test(id);
+      if (query && !id.toLowerCase().includes(query)) return false;
+      if (!filters.remote) return false;
+      if (filters.installedOnly && !installed) return false;
+      if (type === 'release' && legacy && !filters.legacy) return false;
+      if (type === 'release' && !filters.modifications) return false;
+      if (type === 'snapshot' && !filters.snapshot) return false;
+      if ((type === 'old_beta' || type === 'beta') && !filters.beta) return false;
+      if ((type === 'old_alpha' || type === 'alpha') && !filters.alpha) return false;
+      if (type === 'launcher' && !filters.launcher) return false;
+      if ((version.experimental || /experimental/i.test(id)) && !filters.experimental) return false;
+      return true;
+    });
+    select.innerHTML = filtered.length
+      ? filtered.map((version) =>
           `<option value="${esc(version.id)}"${version.id === selectedVersion ? ' selected' : ''}>${esc(version.id)} · ${esc(typeLabel(version.type))}</option>`
         ).join('')
-      : `<option value="">${state.loadingVersions ? 'Загружаем версии…' : 'Версии не найдены'}</option>`;
-    select.disabled = !state.versions.length;
+      : `<option value="">${state.loadingVersions ? 'Загружаем версии…' : 'Нет версий по выбранным фильтрам'}</option>`;
+    select.disabled = !filtered.length;
+    if (filtered.length && !filtered.some((version) => version.id === selectedVersion)) {
+      select.value = filtered.find((version) => version.type === 'release')?.id || filtered[0].id;
+    }
+    const count = $('#instanceVersionCount');
+    if (count) count.textContent = `${filtered.length} / ${state.versions.length}`;
     if (select.value) loadInstanceLoaderVersions();
   }
 
@@ -293,8 +333,10 @@
 
   function setInstanceCreateMode(mode, { search = true } = {}) {
     const browsePacks = mode === 'curseforge';
+    state.curseforgeContext = browsePacks ? 'packs' : 'mods';
     const catalog = $('#curseforgeCatalog');
     const target = $(browsePacks ? '#instancePackBrowserHost' : '#curseforgeCatalogHome');
+    $('#curseforgeCatalogHome').hidden = browsePacks;
     if (catalog && target && catalog.parentElement !== target) target.append(catalog);
 
     $('#instanceForm').hidden = browsePacks;
@@ -311,10 +353,15 @@
     const category = $('#curseforgeClass');
     const version = $('#curseforgeVersion');
     const loader = $('#curseforgeLoader');
-    category.disabled = browsePacks;
-    version.disabled = browsePacks;
-    loader.disabled = browsePacks;
+    const filtersLocked = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
+    category.disabled = state.curseforgeContext === 'packs' || filtersLocked;
+    version.disabled = browsePacks || filtersLocked;
+    loader.disabled = browsePacks || filtersLocked;
     category.value = browsePacks ? '4471' : '6';
+    if (!browsePacks && state.activeInstance) {
+      version.value = state.activeInstance.versionId;
+      loader.value = String(LOADER_TYPES[state.activeInstance.loader] || '');
+    }
     $('#curseforgeSearch').placeholder = browsePacks
       ? 'Например, популярная сборка или модпак'
       : 'Например, JourneyMap или сборка';
@@ -391,6 +438,7 @@
   async function selectInstance(instanceId) {
     try {
       const result = await state.bridge.selectInstance(instanceId);
+      if (!result?.instance || result.ok === false) throw new Error(result?.error || 'Сборка не найдена в списке профилей.');
       state.instances = result.instances || [];
       state.activeInstance = result.instance;
       state.settings = result.settings;
@@ -404,6 +452,12 @@
       syncCurseForgeFilters();
       if (state.view === 'mods') {
         $('#modsInstanceLabel').textContent = `${result.instance.name} · Minecraft ${result.instance.versionId} · ${LOADER_NAMES[result.instance.loader] || result.instance.loader}`;
+        $('#curseforgeVersion').value = result.instance.versionId;
+        $('#curseforgeVersion').disabled = true;
+        $('#curseforgeLoader').value = String(LOADER_TYPES[result.instance.loader] || '');
+        $('#curseforgeLoader').disabled = true;
+        $('#curseforgeClass').value = '6';
+        $('#curseforgeClass').disabled = true;
         loadMods();
       }
       toast('Сборка выбрана', result.instance.name, 'success', 2600);
@@ -567,11 +621,18 @@
     const versionInput = $('#curseforgeVersion');
     if (versionInput && !keepVersion) versionInput.value = state.activeInstance?.versionId || '';
     const loaderSelect = $('#curseforgeLoader');
-    if (loaderSelect && !loaderSelect.disabled) {
+    if (loaderSelect) {
       loaderSelect.value = LOADER_TYPES[state.activeInstance?.loader]
         ? String(LOADER_TYPES[state.activeInstance.loader])
         : '';
     }
+    const locked = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
+    if (state.curseforgeContext === 'packs') $('#curseforgeClass').value = '4471';
+    else if (state.activeInstance && locked) $('#curseforgeClass').value = '6';
+    if (versionInput) versionInput.disabled = locked || state.curseforgeContext === 'packs';
+    if (loaderSelect) loaderSelect.disabled = locked || state.curseforgeContext === 'packs';
+    const categorySelect = $('#curseforgeClass');
+    if (categorySelect) categorySelect.disabled = locked || state.curseforgeContext === 'packs';
   }
 
   function setMemory(value, { persist: shouldPersist = true } = {}) {
@@ -677,10 +738,30 @@
   }
 
   async function searchCurseForge() {
+    const isPackBrowser = state.curseforgeContext === 'packs';
+    const activeModLoader = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
+    if (isPackBrowser) {
+      $('#curseforgeClass').value = '4471';
+      $('#curseforgeClass').disabled = true;
+      $('#curseforgeVersion').disabled = true;
+      $('#curseforgeLoader').disabled = true;
+    } else if (activeModLoader) {
+      $('#curseforgeClass').value = '6';
+      $('#curseforgeClass').disabled = true;
+      $('#curseforgeVersion').value = state.activeInstance.versionId;
+      $('#curseforgeVersion').disabled = true;
+      $('#curseforgeLoader').value = String(LOADER_TYPES[state.activeInstance.loader] || '');
+      $('#curseforgeLoader').disabled = true;
+    } else {
+      $('#curseforgeClass').disabled = false;
+      $('#curseforgeVersion').disabled = false;
+      $('#curseforgeLoader').disabled = false;
+    }
     const container = $('#curseforgeResults');
     const button = $('#searchCurseForge');
     const requestId = ++state.modSearchRequestId;
-    const classId = Number($('#curseforgeClass').value);
+    const classId = state.curseforgeContext === 'packs' ? 4471 : Number($('#curseforgeClass').value);
+    if (classId !== Number($('#curseforgeClass').value)) $('#curseforgeClass').value = String(classId);
     const isModpack = classId === 4471;
     const modLoaderType = $('#curseforgeLoader').value;
     const gameVersion = isModpack ? '' : $('#curseforgeVersion').value.trim();
@@ -692,6 +773,8 @@
         classId,
         gameVersion,
         modLoaderType: !isModpack && modLoaderType ? Number(modLoaderType) : undefined,
+        sortField: Number($('#curseforgeSort').value.split(':')[0]),
+        sortOrder: $('#curseforgeSort').value.split(':')[1],
         index: state.modIndex,
         pageSize: 24
       });
@@ -841,29 +924,68 @@
     setModDownloadProgress(payload);
   }
 
+  async function checkForNotifications() {
+    const button = $('#checkUpdates');
+    if (!state.bridge.checkForUpdates) {
+      toast('Проверка недоступна', 'Не удалось подключиться к службе обновлений.', 'warn');
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Проверяем…';
+    try {
+      const result = await state.bridge.checkForUpdates();
+      if (result?.ok === false) {
+        const reason = result.reason === 'dev' ? 'Проверка доступна в установленной версии лаунчера.' : result.error;
+        throw new Error(reason || 'Не удалось проверить уведомления.');
+      }
+      toast('Проверка начата', 'Ищем новые версии и уведомления.', 'success');
+    } catch (error) {
+      toast('Не удалось проверить уведомления', cleanError(error), 'warn');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Проверить уведомления';
+    }
+  }
+
   function handleUpdateEvent(event) {
     if (!event) return;
     const modal = $('#updateModal');
     const message = $('#updateMessage');
     const action = $('#updateAction');
     if (event.type === 'available') {
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
       state.updateVersion = event.version || '';
       message.textContent = `Доступна версия ${state.updateVersion}. Скачать и установить её?`;
       action.textContent = 'Скачать обновление';
       action.disabled = false;
       modal.hidden = false;
+    } else if (event.type === 'checking') {
+      const button = $('#checkUpdates');
+      button.disabled = true;
+      button.textContent = 'Проверяем…';
     } else if (event.type === 'not-available') {
-      toast('Обновлений нет', 'У вас установлена актуальная версия.', 'success');
+      toast('Уведомлений нет', 'Новых версий лаунчера пока нет.', 'success');
+      const button = $('#checkUpdates');
+      button.disabled = false;
+      button.textContent = 'Проверить уведомления';
     } else if (event.type === 'progress') {
       message.textContent = `Загружаем обновление: ${event.percent}%`;
       action.disabled = true;
     } else if (event.type === 'downloaded') {
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
       message.textContent = `Версия ${event.version || state.updateVersion} загружена и готова к установке.`;
       action.textContent = 'Перезапустить и установить';
       action.disabled = false;
       modal.hidden = false;
     } else if (event.type === 'error') {
-      toast('Проверка обновлений не удалась', event.message || 'Проверьте подключение к интернету.', 'warn');
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
+      toast('Проверка уведомлений не удалась', event.message || 'Проверьте подключение к интернету.', 'warn');
     }
   }
 
@@ -1491,6 +1613,26 @@
       closeInstanceConfig();
     });
     $('#instanceForm').addEventListener('submit', createInstance);
+    $('#instanceVersionSearch').addEventListener('input', (event) => {
+      state.versionQuery = event.target.value;
+      updateInstanceVersionOptions();
+    });
+    $('#instanceVersionFilters').addEventListener('change', (event) => {
+      const checkbox = event.target.closest('[data-version-filter]');
+      if (!checkbox) return;
+      state.versionFilter[checkbox.dataset.versionFilter] = checkbox.checked;
+      updateInstanceVersionOptions();
+    });
+    $('.version-filter-chips--right').addEventListener('change', (event) => {
+      const checkbox = event.target.closest('[data-version-filter]');
+      if (!checkbox) return;
+      state.versionFilter[checkbox.dataset.versionFilter] = checkbox.checked;
+      updateInstanceVersionOptions();
+    });
+    $('#versionExperimental').addEventListener('change', (event) => {
+      state.versionFilter.experimental = event.target.checked;
+      updateInstanceVersionOptions();
+    });
     $('#refreshInstanceVersions').addEventListener('click', async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
@@ -1511,7 +1653,24 @@
     });
 
     $('#searchCurseForge').addEventListener('click', searchCurseForge);
+    $('#resetCurseForgeFilters').addEventListener('click', () => {
+      $('#curseforgeSearch').value = '';
+      $('#curseforgeVersion').value = state.activeInstance?.versionId || '';
+      $('#curseforgeLoader').value = state.activeInstance ? String(LOADER_TYPES[state.activeInstance.loader] || '') : '';
+      $('#curseforgeClass').value = state.curseforgeContext === 'packs' ? '4471' : '6';
+      syncCurseForgeFilters();
+      state.modIndex = 0;
+      searchCurseForge();
+    });
     $('#curseforgeClass').addEventListener('change', () => {
+      if (state.curseforgeContext === 'packs') {
+        $('#curseforgeClass').value = '4471';
+        return;
+      }
+      if (state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader)) {
+        $('#curseforgeClass').value = '6';
+        return;
+      }
       state.modIndex = 0;
       const isModpack = $('#curseforgeClass').value === '4471';
       $('#curseforgeLoader').disabled = isModpack;
@@ -1523,6 +1682,16 @@
     $('#curseforgeLoader').addEventListener('change', () => {
       state.modIndex = 0;
       searchCurseForge();
+    });
+    $('#curseforgeSort').addEventListener('change', () => {
+      state.modIndex = 0;
+      searchCurseForge();
+    });
+    $('#curseforgeSearch').addEventListener('input', () => {
+      state.modIndex = 0;
+    });
+    $('#curseforgeVersion').addEventListener('input', () => {
+      if (state.activeInstance) return;
     });
     $('#curseforgeVersion').addEventListener('change', () => {
       state.modIndex = 0;
@@ -1604,13 +1773,6 @@
       }
     });
 
-    $('#browseCurseForge').addEventListener('click', async () => {
-      try {
-        await state.bridge.browseCurseForge();
-      } catch (error) {
-        showError('Не удалось открыть CurseForge', cleanError(error));
-      }
-    });
     $('#modsList').addEventListener('click', async (event) => {
       const button = event.target.closest('[data-remove-mod]');
       if (!button || !window.confirm(`Удалить мод ${button.dataset.removeMod}?`)) return;
@@ -1753,7 +1915,14 @@
       ['1.21.11', 'release', '2025-12-09T12:23:30+00:00'],
       ['1.21.10', 'release', '2025-10-07T09:17:23+00:00'],
       ['1.21.9', 'release', '2025-09-30T11:58:43+00:00']
-    ].map(([id, type, releaseTime]) => ({ id, type, releaseTime, url: '' }));
+    ].map(([id, type, releaseTime]) => ({
+      id,
+      type,
+      releaseTime,
+      url: '',
+      installed: id === '26.3',
+      experimental: type === 'snapshot' && /experimental/i.test(id)
+    }));
 
     const paths = {
       root: 'C:\\Users\\you\\.obsidian-launcher',
