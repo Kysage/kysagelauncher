@@ -45,6 +45,7 @@
     modDownloadOverallPercent: 0,
     modSearchRequestId: 0,
     modIndex: 0,
+    curseforgeContext: 'mods',
     curseforgeConfigured: false,
     manualDownloads: [],
     manualStatus: {},
@@ -331,6 +332,7 @@
 
   function setInstanceCreateMode(mode, { search = true } = {}) {
     const browsePacks = mode === 'curseforge';
+    state.curseforgeContext = browsePacks ? 'packs' : 'mods';
     const catalog = $('#curseforgeCatalog');
     const target = $(browsePacks ? '#instancePackBrowserHost' : '#curseforgeCatalogHome');
     $('#curseforgeCatalogHome').hidden = browsePacks;
@@ -351,7 +353,7 @@
     const version = $('#curseforgeVersion');
     const loader = $('#curseforgeLoader');
     const filtersLocked = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
-    category.disabled = browsePacks || filtersLocked;
+    category.disabled = state.curseforgeContext === 'packs' || filtersLocked;
     version.disabled = browsePacks || filtersLocked;
     loader.disabled = browsePacks || filtersLocked;
     category.value = browsePacks ? '4471' : '6';
@@ -624,11 +626,12 @@
         : '';
     }
     const locked = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
-    if (state.activeInstance && locked) $('#curseforgeClass').value = '6';
-    if (versionInput) versionInput.disabled = locked;
-    if (loaderSelect) loaderSelect.disabled = locked;
+    if (state.curseforgeContext === 'packs') $('#curseforgeClass').value = '4471';
+    else if (state.activeInstance && locked) $('#curseforgeClass').value = '6';
+    if (versionInput) versionInput.disabled = locked || state.curseforgeContext === 'packs';
+    if (loaderSelect) loaderSelect.disabled = locked || state.curseforgeContext === 'packs';
     const categorySelect = $('#curseforgeClass');
-    if (categorySelect) categorySelect.disabled = locked;
+    if (categorySelect) categorySelect.disabled = locked || state.curseforgeContext === 'packs';
   }
 
   function setMemory(value, { persist: shouldPersist = true } = {}) {
@@ -734,7 +737,14 @@
   }
 
   async function searchCurseForge() {
-    if (state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader)) {
+    const isPackBrowser = state.curseforgeContext === 'packs';
+    const activeModLoader = Boolean(state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader));
+    if (isPackBrowser) {
+      $('#curseforgeClass').value = '4471';
+      $('#curseforgeClass').disabled = true;
+      $('#curseforgeVersion').disabled = true;
+      $('#curseforgeLoader').disabled = true;
+    } else if (activeModLoader) {
       $('#curseforgeClass').value = '6';
       $('#curseforgeClass').disabled = true;
       $('#curseforgeVersion').value = state.activeInstance.versionId;
@@ -749,7 +759,8 @@
     const container = $('#curseforgeResults');
     const button = $('#searchCurseForge');
     const requestId = ++state.modSearchRequestId;
-    const classId = Number($('#curseforgeClass').value);
+    const classId = state.curseforgeContext === 'packs' ? 4471 : Number($('#curseforgeClass').value);
+    if (classId !== Number($('#curseforgeClass').value)) $('#curseforgeClass').value = String(classId);
     const isModpack = classId === 4471;
     const modLoaderType = $('#curseforgeLoader').value;
     const gameVersion = isModpack ? '' : $('#curseforgeVersion').value.trim();
@@ -1606,12 +1617,16 @@
       $('#curseforgeSearch').value = '';
       $('#curseforgeVersion').value = state.activeInstance?.versionId || '';
       $('#curseforgeLoader').value = state.activeInstance ? String(LOADER_TYPES[state.activeInstance.loader] || '') : '';
-      $('#curseforgeClass').value = '6';
+      $('#curseforgeClass').value = state.curseforgeContext === 'packs' ? '4471' : '6';
       syncCurseForgeFilters();
       state.modIndex = 0;
       searchCurseForge();
     });
     $('#curseforgeClass').addEventListener('change', () => {
+      if (state.curseforgeContext === 'packs') {
+        $('#curseforgeClass').value = '4471';
+        return;
+      }
       if (state.activeInstance && ['forge', 'fabric', 'quilt', 'neoforge'].includes(state.activeInstance.loader)) {
         $('#curseforgeClass').value = '6';
         return;
@@ -1631,6 +1646,9 @@
     $('#curseforgeSort').addEventListener('change', () => {
       state.modIndex = 0;
       searchCurseForge();
+    });
+    $('#curseforgeSearch').addEventListener('input', () => {
+      state.modIndex = 0;
     });
     $('#curseforgeVersion').addEventListener('input', () => {
       if (state.activeInstance) return;
