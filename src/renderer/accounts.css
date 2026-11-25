@@ -1,0 +1,446 @@
+/* ─────────────────────────────────────────────────────────────
+   OBSIDIAN Launcher — окно учётных записей
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #07080c;
+  --bg-2: #0b0d13;
+  --panel: #10131a;
+  --panel-2: #141821;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-2: rgba(255, 255, 255, 0.12);
+  --text: #f0f4f8;
+  --text-2: #c3cbd6;
+  --muted: #8b95a5;
+  --dim: #626c7c;
+  --accent: #8bf26b;
+  --accent-2: #46cf5c;
+  --accent-ink: #07120a;
+  --danger: #ff6b6b;
+  --ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(120% 90% at 50% 0%, #11161f 0%, var(--bg) 62%);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.accounts-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.006));
+}
+
+/* ─── заголовок окна ─── */
+
+.accounts-titlebar {
+  flex: none;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 11, 16, 0.72);
+  -webkit-app-region: drag;
+}
+
+.accounts-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accounts-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 18px rgba(139, 242, 107, 0.25);
+}
+
+.accounts-brand div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.accounts-brand strong {
+  font-size: 13.5px;
+  letter-spacing: 0.2px;
+}
+
+.accounts-brand span {
+  color: var(--dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+}
+
+.close-btn {
+  -webkit-app-region: no-drag;
+  width: 32px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 107, 107, 0.16);
+  color: #ff9d9d;
+}
+
+/* ─── содержимое ─── */
+
+.accounts-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accounts-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.accounts-main::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.section {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section h1 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+}
+
+.section h2 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+}
+
+.section-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: 8px 0 0;
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+/* ─── список аккаунтов ─── */
+
+.accounts-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.empty-state {
+  padding: 18px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.022);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.account.is-active {
+  border-color: rgba(139, 242, 107, 0.55);
+  background: rgba(139, 242, 107, 0.06);
+}
+
+.account-face {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #0d1118;
+  image-rendering: pixelated;
+}
+
+.account-face svg,
+.account-face .skin-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.account-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-body strong {
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-body span {
+  color: var(--dim);
+  font-size: 10.5px;
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  flex: none;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(139, 242, 107, 0.14);
+  color: var(--accent);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.account-actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+
+.mini-btn {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.mini-btn:hover {
+  border-color: var(--line-2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.mini-btn.is-danger:hover {
+  border-color: rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff9d9d;
+}
+
+/* ─── создание и редактирование ─── */
+
+.create-row {
+  display: flex;
+  gap: 8px;
+}
+
+.create-row input,
+.edit-row input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.create-row input:focus,
+.edit-row input:focus {
+  border-color: rgba(139, 242, 107, 0.55);
+  box-shadow: 0 0 0 3px rgba(139, 242, 107, 0.1);
+}
+
+.edit-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.edit-row input {
+  height: 30px;
+}
+
+.btn {
+  height: 34px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.btn--accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn--accent:hover {
+  background: #9df87f;
+}
+
+.btn--soft {
+  border-color: var(--line-2);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.btn--soft:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.btn--ghost {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn--ghost:hover {
+  color: var(--text);
+  border-color: var(--line-2);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ─── скин ─── */
+
+.skin-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.skin-preview {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0b0e14;
+  overflow: hidden;
+}
+
+.skin-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.skin-preview img:not([src]) {
+  display: none;
+}
+
+.skin-empty {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.skin-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.skin-info .hint {
+  margin-top: 0;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ─── ошибка ─── */
+
+.error {
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  border-radius: 9px;
+  background: rgba(255, 107, 107, 0.09);
+  color: #ffb3b3;
+  font-size: 12px;
+  line-height: 1.45;
+}

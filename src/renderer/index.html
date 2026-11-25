@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.forgecdn.net https://*.forgecdn.net; script-src 'self'; connect-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OBSIDIAN Launcher</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <header class="titlebar" id="titlebar">
+        <div class="brand">
+          <span class="brand-mark" id="brandMark"></span>
+          <span class="brand-text">
+            <strong>OBSIDIAN</strong>
+            <em>LAUNCHER</em>
+          </span>
+          <span class="demo-chip" id="demoChip" title="Открыто как обычная страница. Запустите npm start для полной версии." hidden>демо</span>
+        </div>
+
+        <nav class="nav" id="nav">
+          <button class="nav-item is-active" data-view="home">Главная</button>
+          <button class="nav-item" data-view="versions">Сборки</button>
+          <button class="nav-item" data-view="mods">Моды</button>
+          <button class="nav-item" data-view="settings">Настройки</button>
+        </nav>
+
+        <div class="titlebar-right">
+          <button class="account-chip" id="accountChip" title="Учётные записи">
+            <span class="avatar avatar--sm" id="accountAvatar"></span>
+            <span class="account-name" id="accountName">Steve</span>
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="8" r="1"/><circle cx="8" cy="8" r="1"/><circle cx="13" cy="8" r="1"/></svg>
+          </button>
+          <div class="window-controls">
+            <button class="win-btn" data-win="minimize" aria-label="Свернуть">
+              <svg viewBox="0 0 16 16" width="12" height="12"><rect x="3" y="7.4" width="10" height="1.2" fill="currentColor"/></svg>
+            </button>
+            <button class="win-btn" data-win="maximize" aria-label="Развернуть">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3.2" y="3.2" width="9.6" height="9.6" rx="1"/></svg>
+            </button>
+            <button class="win-btn win-btn--close" data-win="close" aria-label="Закрыть">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="main-col" id="mainCol">
+          <!-- ─── Главная ─── -->
+          <div class="view is-active" data-view-panel="home">
+            <article class="hero">
+              <div class="hero-art" id="heroArt"></div>
+              <div class="hero-shade"></div>
+              <div class="hero-particles" id="heroParticles" aria-hidden="true"></div>
+
+              <div class="hero-content">
+                <div class="hero-top">
+                  <div class="hero-tags">
+                    <span class="tag tag--accent" id="heroLoader">Vanilla</span>
+                    <span class="tag" id="heroType">Релиз</span>
+                    <span class="tag tag--quiet" id="heroJava">Java 21+</span>
+                  </div>
+                  <button class="ghost-icon" id="heroSettings" aria-label="Настройки">
+                    <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4">
+                      <circle cx="8" cy="8" r="2.2"/>
+                      <path d="M8 1.6v1.8M8 12.6v1.8M1.6 8h1.8M12.6 8h1.8M3.5 3.5l1.3 1.3M11.2 11.2l1.3 1.3M12.5 3.5l-1.3 1.3M4.8 11.2l-1.3 1.3"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="hero-body">
+                  <h1 class="hero-title">Твой мир<br />ждёт</h1>
+                  <p class="hero-sub">Создай отдельную сборку с нужной версией Minecraft и загрузчиком — остальное сделаем за тебя.</p>
+
+                  <div class="hero-actions">
+                    <button class="btn btn--play" id="playBtn">
+                      <span class="btn-icon" id="playIcon"></span>
+                      <span id="playLabel">Играть</span>
+                    </button>
+                    <button class="btn btn--ghost" id="stopBtn" hidden>
+                      <span class="btn-icon"></span>
+                      <span id="stopLabel">Остановить</span>
+                    </button>
+                    <button class="hero-version" id="versionPick" title="Выбрать версию">
+                      <span class="hv-label">Сборка</span>
+                      <span class="hv-row">
+                        <strong id="heroVersion">—</strong>
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 6.5 4 4 4-4"/></svg>
+                      </span>
+                    </button>
+                  </div>
+
+                  <div class="launch-progress" id="launchProgress" hidden>
+                    <div class="lp-head">
+                      <span id="progressMsg">Подготовка…</span>
+                      <strong id="progressPct">0%</strong>
+                    </div>
+                    <div class="lp-track"><div class="lp-fill" id="progressFill"></div></div>
+                    <div class="lp-detail" id="progressDetail"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-stats">
+                <div class="stat">
+                  <span class="stat-value" id="statVersion">—</span>
+                  <span class="stat-label">версия</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value" id="statMemory">4 ГБ</span>
+                  <span class="stat-label">память</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value" id="statJava">—</span>
+                  <span class="stat-label">java</span>
+                </div>
+              </div>
+            </article>
+
+            <section class="section">
+              <div class="section-head">
+                <div>
+                  <h2>Ваши сборки</h2>
+                  <p>Изолированные профили Minecraft и моды для каждого</p>
+                </div>
+                <button class="link-btn" data-view="versions">
+                  Все сборки
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8h9M8.5 3.8 12.7 8l-4.2 4.2"/></svg>
+                </button>
+              </div>
+              <div class="home-instances" id="homeInstances"></div>
+            </section>
+          </div>
+
+          <!-- ─── Сборки ─── -->
+          <div class="view" data-view-panel="versions">
+            <div class="page-head">
+              <div>
+                <h1>Мои сборки</h1>
+                <p>Каждая сборка хранит свои файлы, моды, версию игры и загрузчик отдельно.</p>
+              </div>
+              <button class="btn btn--play" id="createInstance">Создать сборку</button>
+            </div>
+            <div class="instances-list" id="instanceList"></div>
+          </div>
+
+          <!-- ─── Моды ─── -->
+          <div class="view" data-view-panel="mods">
+            <div class="page-head">
+              <div>
+                <h1>Моды</h1>
+                <p id="modsInstanceLabel">Установленные JAR-файлы и каталог CurseForge.</p>
+              </div>
+              <div class="button-row">
+                <button class="btn btn--soft" id="showManualDownloads" type="button" hidden>Нужно скачать вручную · 0</button>
+                <button class="btn btn--soft" id="browseCurseForge">Открыть CurseForge</button>
+                <button class="btn btn--play" id="addLocalMod">Добавить JAR</button>
+              </div>
+            </div>
+
+            <div id="curseforgeCatalogHome">
+            <section class="panel mod-url-panel" id="curseforgeCatalog">
+              <div class="panel-head">
+                <h2>Каталог CurseForge</h2>
+              </div>
+              <div class="mod-filters" id="curseforgeFilters">
+                <label class="field">
+                  <span>Категория</span>
+                  <select id="curseforgeClass">
+                    <option value="6">Моды</option>
+                    <option value="4471">Готовые сборки</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Версия Minecraft</span>
+                  <input id="curseforgeVersion" type="text" placeholder="Любая" spellcheck="false" autocomplete="off" />
+                </label>
+                <label class="field">
+                  <span>Загрузчик</span>
+                  <select id="curseforgeLoader">
+                    <option value="">Любой</option>
+                    <option value="1">Forge</option>
+                    <option value="4">Fabric</option>
+                    <option value="5">Quilt</option>
+                    <option value="6">NeoForge</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Сортировка</span>
+                  <select id="curseforgeSort">
+                    <option value="2:desc">Популярные</option>
+                    <option value="6:desc">Больше загрузок</option>
+                    <option value="3:desc">Недавно обновлённые</option>
+                    <option value="4:asc">По названию</option>
+                  </select>
+                </label>
+              </div>
+              <div class="field-row">
+                <div class="field grow">
+                  <label for="curseforgeSearch">Поиск модов и модпаков</label>
+                  <div class="input-group">
+                    <input id="curseforgeSearch" type="search" placeholder="Например, JourneyMap или сборка" autocomplete="off" />
+                    <button class="btn btn--soft" id="searchCurseForge">Найти</button>
+                    <button class="btn btn--ghost btn--sm" id="resetCurseForgeFilters" type="button">Сбросить</button>
+                  </div>
+                </div>
+              </div>
+              <p class="hint" id="curseforgeKeyHint">Ключ CurseForge подключается автоматически. Можно переопределить его через CURSEFORGE_API_KEY в .env.</p>
+              <div class="mod-download-progress" id="modDownloadProgress" hidden>
+                <div class="mod-download-progress-head">
+                  <span id="modDownloadLabel">Подготовка загрузки…</span>
+                  <strong id="modDownloadPercent">0%</strong>
+                </div>
+                <div class="lp-track"><div class="lp-fill" id="modDownloadFill"></div></div>
+                <div class="download-file-list" id="modDownloadFiles" hidden></div>
+                <div class="mod-download-progress-foot">
+                  <span id="modDownloadDetail"></span>
+                  <button class="btn btn--ghost btn--sm" id="cancelModDownload" type="button">Отменить</button>
+                </div>
+              </div>
+              <div class="catalog-results" id="curseforgeResults"></div>
+            </section>
+            </div>
+
+            <section class="panel mods-panel">
+              <div class="panel-head">
+                <h2>Установленные моды</h2>
+                <strong class="panel-value" id="modsCount">0</strong>
+              </div>
+              <div class="mods-list" id="modsList"></div>
+            </section>
+          </div>
+
+          <!-- ─── Настройки ─── -->
+          <div class="view" data-view-panel="settings">
+            <div class="page-head">
+              <div>
+                <h1>Настройки</h1>
+                <p>Память, Java и поведение лаунчера.</p>
+              </div>
+            </div>
+
+            <div class="settings-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Учётные записи</h2>
+                    <p class="hint">Локальные профили, ники и скин персонажа.</p>
+                  </div>
+                </div>
+                <div class="settings-account-row">
+                  <span class="avatar avatar--lg" id="settingsAccountAvatar"></span>
+                  <div class="settings-account-meta">
+                    <strong id="settingsAccountName">Steve</strong>
+                    <span>Активный локальный профиль</span>
+                  </div>
+                  <button class="btn btn--soft btn--sm" id="settingsManageAccounts" type="button">Открыть</button>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Память</h2>
+                  <strong class="panel-value" id="settingsMemoryValue">4 ГБ</strong>
+                </div>
+                <input type="range" id="settingsMemory" class="range" min="1024" max="16384" step="512" />
+                <div class="range-scale"><span>1 ГБ</span><span>16 ГБ</span></div>
+                <p class="hint" id="settingsMemoryHint">Рекомендуем 4–8 ГБ. Больше — для сборок с модами.</p>
+              </section>
+
+              <section class="panel java-panel">
+                <div class="panel-head">
+                  <h2>Java и файлы</h2>
+                </div>
+                <div class="field-row">
+                  <div class="field grow">
+                    <label for="javaInput">Путь к java.exe</label>
+                    <div class="input-group">
+                      <input id="javaInput" type="text" placeholder="Определяется автоматически" spellcheck="false" />
+                      <button class="btn btn--soft btn--sm" id="javaBrowse">Обзор</button>
+                      <button class="btn btn--soft btn--sm" id="javaCheck">Проверить</button>
+                    </div>
+                    <p class="hint" id="javaHint">Лаунчер сам найдёт установленную Java, включая рантаймы официального лаунчера.</p>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field grow">
+                    <label for="gameDirInput">Папка игры</label>
+                    <div class="input-group">
+                      <input id="gameDirInput" type="text" placeholder="По умолчанию" spellcheck="false" />
+                      <button class="btn btn--soft btn--sm" id="gameDirBrowse">Выбрать</button>
+                      <button class="btn btn--soft btn--sm" id="gameDirOpen">Открыть</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel behavior-panel">
+                <div class="panel-head">
+                  <h2>Поведение</h2>
+                </div>
+                <div class="switch-row">
+                  <div>
+                    <strong>Закрывать лаунчер при запуске игры</strong>
+                    <p class="hint">Лаунчер свернётся и закроется, как только Minecraft начнёт загружаться.</p>
+                  </div>
+                  <button class="switch" id="closeOnLaunch" role="switch" aria-checked="false"><span></span></button>
+                </div>
+                <div class="switch-row">
+                  <div>
+                    <strong>Показывать журнал при запуске</strong>
+                    <p class="hint">Раскрывать консоль с логами, пока игра скачивается и стартует.</p>
+                  </div>
+                  <button class="switch is-on" id="showConsole" role="switch" aria-checked="true"><span></span></button>
+                </div>
+                <p class="panel-note">Настройки применяются при следующем запуске игры.</p>
+              </section>
+            </div>
+
+            <div class="settings-actions">
+              <button class="btn btn--play btn--sm-play" id="saveSettings">
+                <span class="btn-icon"></span>
+                Сохранить
+              </button>
+              <button class="btn btn--ghost" id="resetSettings">Сбросить</button>
+              <span class="settings-saved" id="settingsSaved" hidden>Сохранено</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─── Правая колонка ─── -->
+        <aside class="side-col">
+          <section class="card profile-card">
+            <span class="avatar avatar--lg" id="sideAvatar"></span>
+            <div class="profile-info">
+              <strong id="sideName">Steve</strong>
+              <span id="sideStatus">Локальный профиль</span>
+            </div>
+            <button class="icon-btn" id="editProfile" aria-label="Учётные записи" title="Учётные записи">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.3 2.7 13.3 4.7 5.6 12.4 2.8 13.2l.8-2.8z"/></svg>
+            </button>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <span class="label">Память</span>
+              <strong class="card-value" id="memCardValue">4 ГБ</strong>
+            </div>
+            <input type="range" id="memRange" class="range" min="1024" max="16384" step="512" />
+            <div class="range-scale"><span>1 ГБ</span><span>16 ГБ</span></div>
+            <p class="hint" id="memCardHint">Рекомендуем 4–8 ГБ для комфортной игры.</p>
+          </section>
+
+          <section class="card system-card">
+            <div class="card-head">
+              <span class="label">Система</span>
+              <span class="state" id="javaState">проверка</span>
+            </div>
+            <div class="system-row">
+              <span class="system-icon">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="8" rx="1.5"/><path d="M5 14h6M8 11v3"/></svg>
+              </span>
+              <div>
+                <strong id="javaVersionText">Java не найдена</strong>
+                <span class="truncate" id="javaPathText">—</span>
+              </div>
+            </div>
+            <div class="system-row">
+              <span class="system-icon">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2.5h10v11H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg>
+              </span>
+              <div>
+                <strong id="gameDirText">Папка игры</strong>
+                <span class="truncate" id="gameDirPath">—</span>
+              </div>
+            </div>
+            <button class="system-link" id="systemSettings">
+              Открыть настройки
+              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8h9M8.5 3.8 12.7 8l-4.2 4.2"/></svg>
+            </button>
+          </section>
+
+          <section class="card news-card">
+            <div class="card-head">
+              <span class="label">Что нового</span>
+              <span class="state state--accent">v1.0</span>
+            </div>
+            <ul class="news-list">
+              <li>
+                <span class="news-dot"></span>
+                <div>
+                  <strong>Настоящий запуск игры</strong>
+                  <p>Манифест Mojang, библиотеки, ресурсы и корректные аргументы JVM.</p>
+                </div>
+              </li>
+              <li>
+                <span class="news-dot"></span>
+                <div>
+                  <strong>Умная загрузка</strong>
+                  <p>Скачанные файлы проверяются и больше не загружаются заново.</p>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+
+      <div class="modal-scrim" id="instanceModal" hidden>
+        <section class="modal-panel instance-create-panel" role="dialog" aria-modal="true" aria-labelledby="instanceModalTitle">
+          <div class="modal-head">
+            <div>
+              <h2 id="instanceModalTitle">Создать сборку</h2>
+              <p>Выбери имя, версию Minecraft и загрузчик.</p>
+            </div>
+            <button class="ghost-icon" id="closeInstanceModal" type="button" aria-label="Закрыть">×</button>
+          </div>
+          <div class="instance-create-tabs" role="tablist" aria-label="Способ создания сборки">
+            <button class="btn btn--soft is-active" id="instanceManualTab" type="button" role="tab" aria-controls="instanceForm" aria-selected="true">Своя сборка</button>
+            <button class="btn btn--soft" id="instanceCurseForgeTab" type="button" role="tab" aria-controls="instancePackBrowser" aria-selected="false">Готовая сборка CurseForge</button>
+          </div>
+          <form id="instanceForm">
+            <label class="field">
+              <span>Название сборки</span>
+              <input id="instanceName" type="text" maxlength="40" placeholder="Например, Выживание с модами" required />
+            </label>
+            <div class="field version-filter-field">
+              <div class="version-filter-heading">
+                <span>Список версий</span>
+                <em class="version-filter-count" id="instanceVersionCount"></em>
+              </div>
+              <div class="version-filter-layout">
+                <div class="version-filter-chips" id="instanceVersionFilters">
+                  <label class="version-chip"><input type="checkbox" data-version-filter="remote" checked /><span>Загружать с сервера</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="modifications" checked /><span>Модификации</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="alpha" /><span>Альфа (2010 г.)</span></label>
+                  <label class="version-chip"><input type="checkbox" id="versionExperimental" /><span>Экспериментальные</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="installedOnly" /><span>Только установленные</span></label>
+                </div>
+                <div class="version-filter-chips version-filter-chips--right">
+                  <label class="version-chip"><input type="checkbox" data-version-filter="snapshot" /><span>Снапшоты</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="beta" /><span>Бета (2010-2011 гг.)</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="launcher" /><span>Лаунчеры</span></label>
+                  <label class="version-chip"><input type="checkbox" data-version-filter="legacy" checked /><span>Релизы до 1.7.10</span></label>
+                </div>
+              </div>
+              <input id="instanceVersionSearch" type="search" placeholder="Поиск версии, например 1.20.1" autocomplete="off" />
+              <div class="input-group">
+                <select id="instanceGameVersion" required disabled>
+                  <option value="">Загружаем список версий…</option>
+                </select>
+                <button class="btn btn--soft btn--sm" id="refreshInstanceVersions" type="button" aria-label="Обновить список версий">Обновить</button>
+              </div>
+              <p class="hint">Фильтры не меняют сборку: выберите версию, для которой хотите создать профиль.</p>
+            </div>
+            <label class="field">
+              <span>Загрузчик</span>
+              <select id="instanceLoader">
+                <option value="vanilla">Vanilla</option>
+                <option value="forge">Forge</option>
+                <option value="fabric">Fabric</option>
+                <option value="quilt">Quilt</option>
+                <option value="neoforge">NeoForge</option>
+              </select>
+            </label>
+            <label class="field" id="instanceLoaderVersionField" hidden>
+              <span>Версия загрузчика</span>
+              <select id="instanceLoaderVersion" disabled>
+                <option value="">Сначала выбери версию Minecraft</option>
+              </select>
+            </label>
+            <p class="hint" id="instanceLoaderHint">Для сборки будет создана отдельная папка игры.</p>
+            <div class="modal-actions">
+              <button class="btn btn--soft" id="cancelInstanceCreate" type="button">Отмена</button>
+              <button class="btn btn--play" id="submitInstanceCreate" type="submit">Создать сборку</button>
+            </div>
+          </form>
+          <div id="instancePackBrowser" role="tabpanel" hidden>
+            <p class="hint">Найди готовую сборку, выбери подходящий файл и скачай её в отдельный профиль.</p>
+            <div id="instancePackBrowserHost"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="modal-scrim" id="instanceConfigModal" hidden>
+        <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="instanceConfigTitle">
+          <div class="modal-head">
+            <div>
+              <h2 id="instanceConfigTitle">Настройки сборки</h2>
+              <p id="instanceConfigDescription">Параметры этой сборки и её моды.</p>
+            </div>
+            <button class="ghost-icon" id="closeInstanceConfig" type="button" aria-label="Закрыть">×</button>
+          </div>
+          <form id="instanceConfigForm">
+            <label class="field">
+              <span>Название сборки</span>
+              <input id="instanceConfigName" type="text" maxlength="40" required />
+            </label>
+            <label class="field" for="instanceConfigMemory">
+              <div class="config-memory-head"><span>Выделенная память</span><strong id="instanceConfigMemoryValue">4 ГБ</strong></div>
+              <input id="instanceConfigMemory" class="range" type="range" min="1024" max="16384" step="512" />
+              <p class="hint">Память настраивается отдельно для каждой сборки.</p>
+            </label>
+            <div class="instance-config-meta" id="instanceConfigMeta"></div>
+            <div class="modal-actions instance-config-actions">
+              <button class="btn btn--soft" id="openInstanceFolder" type="button">Открыть папку</button>
+              <button class="btn btn--soft" id="openInstanceMods" type="button">Моды сборки</button>
+              <button class="btn btn--danger" id="deleteInstanceConfig" type="button">Удалить сборку</button>
+              <button class="btn btn--play" id="saveInstanceConfig" type="submit">Сохранить</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <div class="modal-scrim" id="manualDownloadsModal" hidden>
+        <section class="modal-panel manual-download-panel" role="dialog" aria-modal="true" aria-labelledby="manualDownloadsTitle">
+          <div class="modal-head">
+            <div>
+              <h2 id="manualDownloadsTitle">Нужно скачать вручную</h2>
+              <p>Эти файлы нельзя получить автоматически. Скачайте их со страниц проектов в папку «Загрузки» — лаунчер сам найдёт готовые файлы. Продолжить можно только после того, как все файлы будут на месте.</p>
+            </div>
+            <button class="ghost-icon" id="closeManualDownloads" type="button" aria-label="Закрыть">×</button>
+          </div>
+          <div class="manual-download-list" id="manualDownloadList"></div>
+          <div class="modal-actions manual-download-actions">
+            <button class="btn btn--soft" id="copyManualDownloads" type="button">Скопировать список</button>
+            <button class="btn btn--ghost" id="cancelManualDownloads" type="button">Отменить загрузку</button>
+            <button class="btn btn--play" id="closeManualDownloadsFooter" type="button" disabled>Продолжить · ожидаем файлы</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="console" id="console" aria-hidden="true">
+        <header class="console-head">
+          <span class="console-title">
+            <span class="console-dot"></span>
+            Журнал запуска
+          </span>
+          <div class="console-actions">
+            <button id="consoleClear">Очистить</button>
+            <button id="consoleClose" aria-label="Закрыть журнал">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 4 8 8M12 4l-8 8"/></svg>
+            </button>
+          </div>
+        </header>
+        <pre class="console-body" id="consoleBody"></pre>
+      </section>
+
+      <footer class="statusbar">
+        <div class="status-left">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Готов к запуску</span>
+        </div>
+        <div class="status-right">
+          <span class="meta-badge" id="memBadge">4 ГБ</span>
+          <span class="meta-badge" id="javaBadge">Java —</span>
+          <button class="mini-btn" id="consoleToggle">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m4 5 3 3-3 3M8.5 11H12"/></svg>
+            Журнал
+          </button>
+          <button class="mini-btn" id="openFolder">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4.5h4l1.3 1.6H14v7H2z"/></svg>
+            Папка игры
+          </button>
+        </div>
+      </footer>
+
+      <div class="toasts" id="toasts" aria-live="polite"></div>
+      <div class="modal-scrim" id="updateModal" hidden>
+        <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="updateTitle">
+          <div class="modal-head">
+            <div>
+              <h2 id="updateTitle">Обновление лаунчера</h2>
+              <p id="updateMessage">Доступна новая версия.</p>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn--ghost" id="updateLater" type="button">Позже</button>
+            <button class="btn btn--play" id="updateAction" type="button">Скачать обновление</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="art.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; connect-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Учётные записи</title>
+    <link rel="stylesheet" href="accounts.css" />
+  </head>
+  <body>
+    <div class="accounts-app">
+      <header class="accounts-titlebar">
+        <div class="accounts-brand">
+          <span class="accounts-mark" aria-hidden="true"></span>
+          <div>
+            <strong>Учётные записи</strong>
+            <span>OBSIDIAN Launcher</span>
+          </div>
+        </div>
+        <button class="close-btn" id="closeAccounts" type="button" aria-label="Закрыть">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="m4 4 8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </header>
+
+      <main class="accounts-main">
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <h1>Локальные профили</h1>
+              <p>Выберите активный профиль — с ним лаунчер запустит Minecraft.</p>
+            </div>
+          </div>
+          <div class="accounts-list" id="accountsList"></div>
+        </section>
+
+        <section class="section">
+          <h2>Новый профиль</h2>
+          <form class="create-row" id="createAccountForm">
+            <input
+              id="newAccountName"
+              type="text"
+              maxlength="16"
+              placeholder="Ник, до 16 символов"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="btn btn--accent" type="submit">Добавить</button>
+          </form>
+          <p class="hint">UUID создаётся локально из ника. Профили с одинаковыми никами не допускаются.</p>
+        </section>
+
+        <section class="section">
+          <h2>Скин персонажа</h2>
+          <div class="skin-row">
+            <div class="skin-preview" id="skinPreview">
+              <img id="skinTexture" alt="Текстура скина" />
+              <span class="skin-empty" id="skinEmpty">Нет скина</span>
+            </div>
+            <div class="skin-info">
+              <p class="hint">
+                PNG-скин показывается в лаунчере и подключается в офлайн-игру через локальный ресурс-пак.
+                Он действует только на этом компьютере.
+              </p>
+              <div class="button-row">
+                <button class="btn btn--soft" id="pickSkin" type="button">Выбрать PNG</button>
+                <button class="btn btn--ghost" id="removeSkin" type="button" hidden>Убрать</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <p class="error" id="accountsError" hidden></p>
+      </main>
+    </div>
+
+    <script src="art.js"></script>
+    <script src="accounts.js"></script>
+  </body>
+</html>

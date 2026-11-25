@@ -1,0 +1,76 @@
+{
+  "name": "obsidian-launcher",
+  "productName": "OBSIDIAN Launcher",
+  "version": "1.0.0",
+  "description": "Лаунчер Minecraft с собственным интерфейсом и настоящим запуском игры",
+  "main": "src/main/main.js",
+  "author": "You",
+  "license": "MIT",
+  "private": true,
+  "build": {
+    "appId": "com.obsidian.launcher",
+    "productName": "OBSIDIAN Launcher",
+    "asar": true,
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "src/**/*",
+      "scripts/**/*",
+      "package.json",
+      "README.md",
+      "PROJECT_DESCRIPTION.md",
+      "!shots/**/*",
+      "!test/**/*",
+      "!dist/**/*",
+      "!dist-installer/**/*"
+    ],
+    "icon": "assets/icon.ico",
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "OBSIDIAN-Launcher-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "release"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OBSIDIAN Launcher",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "shot": "electron . --screenshot shots/preview.png",
+    "doctor": "electron scripts/doctor.js 30",
+    "test": "node --test",
+    "build:win": "electron-packager . \"OBSIDIAN Launcher\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --asar=true --icon=assets/icon.ico",
+    "build:installer": "electron-builder --win nsis",
+    "publish:release": "electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  }
+}
