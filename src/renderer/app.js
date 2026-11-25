@@ -150,6 +150,7 @@
       if (state.bridge.onUpdateEvent) state.bridge.onUpdateEvent(handleUpdateEvent);
       $('#updateLater').addEventListener('click', () => { $('#updateModal').hidden = true; });
       $('#updateAction').addEventListener('click', handleUpdateAction);
+      $('#checkUpdates').addEventListener('click', checkForNotifications);
       if (state.bridge.onLaunch) {
         state.bridge.onLaunch(handleLaunchEvent);
       }
@@ -923,29 +924,68 @@
     setModDownloadProgress(payload);
   }
 
+  async function checkForNotifications() {
+    const button = $('#checkUpdates');
+    if (!state.bridge.checkForUpdates) {
+      toast('Проверка недоступна', 'Не удалось подключиться к службе обновлений.', 'warn');
+      return;
+    }
+    button.disabled = true;
+    button.textContent = 'Проверяем…';
+    try {
+      const result = await state.bridge.checkForUpdates();
+      if (result?.ok === false) {
+        const reason = result.reason === 'dev' ? 'Проверка доступна в установленной версии лаунчера.' : result.error;
+        throw new Error(reason || 'Не удалось проверить уведомления.');
+      }
+      toast('Проверка начата', 'Ищем новые версии и уведомления.', 'success');
+    } catch (error) {
+      toast('Не удалось проверить уведомления', cleanError(error), 'warn');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Проверить уведомления';
+    }
+  }
+
   function handleUpdateEvent(event) {
     if (!event) return;
     const modal = $('#updateModal');
     const message = $('#updateMessage');
     const action = $('#updateAction');
     if (event.type === 'available') {
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
       state.updateVersion = event.version || '';
       message.textContent = `Доступна версия ${state.updateVersion}. Скачать и установить её?`;
       action.textContent = 'Скачать обновление';
       action.disabled = false;
       modal.hidden = false;
+    } else if (event.type === 'checking') {
+      const button = $('#checkUpdates');
+      button.disabled = true;
+      button.textContent = 'Проверяем…';
     } else if (event.type === 'not-available') {
-      toast('Обновлений нет', 'У вас установлена актуальная версия.', 'success');
+      toast('Уведомлений нет', 'Новых версий лаунчера пока нет.', 'success');
+      const button = $('#checkUpdates');
+      button.disabled = false;
+      button.textContent = 'Проверить уведомления';
     } else if (event.type === 'progress') {
       message.textContent = `Загружаем обновление: ${event.percent}%`;
       action.disabled = true;
     } else if (event.type === 'downloaded') {
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
       message.textContent = `Версия ${event.version || state.updateVersion} загружена и готова к установке.`;
       action.textContent = 'Перезапустить и установить';
       action.disabled = false;
       modal.hidden = false;
     } else if (event.type === 'error') {
-      toast('Проверка обновлений не удалась', event.message || 'Проверьте подключение к интернету.', 'warn');
+      const checkButton = $('#checkUpdates');
+      checkButton.disabled = false;
+      checkButton.textContent = 'Проверить уведомления';
+      toast('Проверка уведомлений не удалась', event.message || 'Проверьте подключение к интернету.', 'warn');
     }
   }
 
